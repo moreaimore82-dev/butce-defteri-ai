@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bütçe Defteri AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e293b', // slate-800
+                        secondary: '#334155', // slate-700
+                        success: '#2ecc71', // Parlak Yeşil
+                        danger: '#ff4757', // Parlak Kırmızı
+                        warning: '#ffa502', // Parlak Turuncu
+                        info: '#3742fa', // Parlak Mavi
+                        light: '#f1f2f6',
+                        darkBg: '#0f172a' // slate-900
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Glass Panel - Dark/Light Compatible */
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .dark .glass-panel { background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #bdc3c7; border-radius: 4px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #95a5a6; }
+        
+        /* Input Transitions */
+        input, select { transition: all 0.3s ease; }
+        input:focus, select:focus { outline: none; border-color: #3742fa; box-shadow: 0 0 0 3px rgba(55, 66, 250, 0.2); }
+        
+        /* Table row hover */
+        tbody tr { transition: background-color 0.2s; }
+        tbody tr:hover { background-color: #f8f9fa; }
+        .dark tbody tr:hover { background-color: #334155; }
+        
+        /* Toggle Switch Styles */
+        input:checked ~ .toggle-bg { background-color: #ffa502; }
+        input:checked ~ .dot { transform: translateX(100%); }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 dark:bg-darkBg dark:text-gray-100 h-screen flex flex-col overflow-hidden transition-colors duration-300">
+
+    <!-- Header -->
+    <header class="bg-primary text-white p-4 shadow-lg z-10 border-b border-secondary">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2 tracking-wide">
+                <i class="fa-solid fa-microchip text-info"></i> Bütçe Defteri <span class="text-info font-black">AI</span>
+            </h1>
+            <div class="flex items-center gap-2 md:gap-4">
+                <button onclick="toggleTheme()" id="themeToggleBtn" class="bg-secondary hover:bg-slate-600 border border-gray-600 text-white px-3 py-2 rounded-lg shadow-md font-bold text-sm flex items-center justify-center transition transform hover:scale-105 w-9 h-9" title="Açık/Koyu Tema Değiştir">
+                    <i class="fa-solid fa-sun text-yellow-400" id="themeIcon"></i>
+                </button>
+                <div class="text-sm opacity-80 hidden lg:block" id="currentDateDisplay"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto p-4 flex flex-col gap-5 overflow-hidden">
+        
+        <!-- ÜST AKSİYON BUTONLARI -->
+        <div class="flex flex-row gap-3 shrink-0">
+            <button onclick="toggleKurulumModal()" class="flex-1 glass-panel bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border-2 border-warning/40 hover:border-warning text-gray-800 dark:text-white px-2 sm:px-4 py-3 sm:py-4 rounded-xl shadow-lg font-bold text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 transition-all duration-300 transform hover:-translate-y-1 text-center">
+                <div class="bg-warning/20 p-2 rounded-full flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 shrink-0"><i class="fa-solid fa-bolt text-warning text-base sm:text-xl"></i></div>
+                <span class="leading-tight">Hızlı Kurulum</span>
+            </button>
+            <button onclick="toggleDurumModal()" class="flex-1 glass-panel bg-white/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-800 border-2 border-info/40 hover:border-info text-gray-800 dark:text-white px-2 sm:px-4 py-3 sm:py-4 rounded-xl shadow-lg font-bold text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 transition-all duration-300 transform hover:-translate-y-1 text-center">
+                <div class="bg-info/20 p-2 rounded-full flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 shrink-0"><i class="fa-solid fa-chart-pie text-info text-base sm:text-xl"></i></div>
+                <span class="leading-tight">Finansal Durum</span>
+            </button>
+        </div>
+
+        <!-- ALT PANELLER (Veri Girişi ve Raporlama) -->
+        <div class="flex flex-col md:flex-row gap-6 h-full overflow-hidden">
+            
+            <!-- SOL PANEL: VERİ GİRİŞİ (GERİ YÜKLENDİ) -->
+            <div class="w-full md:w-1/3 glass-panel rounded-xl shadow-2xl p-6 flex flex-col h-full overflow-y-auto custom-scrollbar border-t-4 border-t-info">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-info"></i> Yeni İşlem Ekle
+                </h2>
+                
+                <form id="islemForm" class="flex flex-col gap-4">
+                    <!-- Tarih ve Transfer Toggle -->
+                    <div class="flex gap-4 items-end">
+                        <div class="w-1/2">
+                            <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Tarih</label>
+                            <input type="date" id="tarih" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-50 dark:bg-slate-700 text-sm dark:text-white">
+                        </div>
+                        <div class="w-1/2 flex items-center h-[38px]">
+                            <label class="flex items-center cursor-pointer" title="Farklı bir hesaba para aktarmak için aktifleştirin">
+                                <div class="relative">
+                                    <input type="checkbox" id="isAktarma" class="sr-only" onchange="toggleHedefAlanlar()">
+                                    <div class="block bg-gray-300 dark:bg-slate-600 w-10 h-6 rounded-full transition-colors duration-300 toggle-bg"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform duration-300 shadow"></div>
+                                </div>
+                                <div class="ml-3 text-xs font-bold text-gray-600 dark:text-gray-300 uppercase">Transfer Yap</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-slate-800 p-3 rounded border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-right-from-bracket"></i> Kaynak Hesap</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Banka Adı</label>
+                                <select id="kaynakBanka" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-slate-700 dark:text-white">
+                                    <option value="" disabled selected>Banka Seçiniz</option>
+                                    <option value="Akbank">Akbank</option>
+                                    <option value="Albaraka Türk">Albaraka Türk</option>
+                                    <option value="Alternatif Bank">Alternatif Bank</option>
+                                    <option value="Anadolubank">Anadolubank</option>
+                                    <option value="Burgan Bank">Burgan Bank</option>
+                                    <option value="DenizBank">DenizBank</option>
+                                    <option value="Emlak Katılım">Emlak Katılım</option>
+                                    <option value="Enpara.com">Enpara.com</option>
+                                    <option value="Fibabanka">Fibabanka</option>
+                                    <option value="Garanti BBVA">Garanti BBVA</option>
+                                    <option value="Halkbank">Halkbank</option>
+                                    <option value="ING">ING</option>
+                                    <option value="Kuveyt Türk">Kuveyt Türk</option>
+                                    <option value="Odeabank">Odeabank</option>
+                                    <option value="QNB">QNB (Finansbank)</option>
+                                    <option value="Şekerbank">Şekerbank</option>
+                                    <option value="TEB">TEB (Türk Ekonomi Bankası)</option>
+                                    <option value="Türkiye Finans">Türkiye Finans</option>
+                                    <option value="Türkiye İş Bankası">Türkiye İş Bankası</option>
+                                    <option value="VakıfBank">VakıfBank</option>
+                                    <option value="Vakıf Katılım">Vakıf Katılım</option>
+                                    <option value="Yapı Kredi">Yapı Kredi</option>
+                                    <option value="Ziraat Bankası">Ziraat Bankası</option>
+                                    <option value="Ziraat Katılım">Ziraat Katılım</option>
+                                    <option value="Diğer">Diğer...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Hesap Türü</label>
+                                <select id="kaynakKredi" required class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-slate-700 dark:text-white">
+                                    <option value="Vadesiz">Vadesiz Hesap</option>
+                                    <option value="Taksitli Kredi">Taksitli Kredi</option>
+                                    <option value="KMH">KMH (Ek Hesap)</option>
+                                    <option value="Kredi Kartı">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col">
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1">Tutar (TL)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-400 font-bold">₺</span>
+                            <input type="text" inputmode="numeric" id="tutar" placeholder="0" required class="w-full p-2 pl-8 border border-gray-300 dark:border-gray-600 dark:bg-slate-700 rounded text-lg font-bold text-right text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+
+                    <!-- Aktarma İşlemi İçin Hedef Alanlar -->
+                    <div id="hedefAlanlar" class="hidden bg-orange-50 dark:bg-slate-800 p-3 rounded border border-orange-200 dark:border-gray-600 mt-2">
+                        <h3 class="text-xs font-bold text-warning uppercase mb-2 flex items-center gap-1"><i class="fa-solid fa-arrow-right-to-bracket"></i> Hedef Hesap</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Hedef Banka</label>
+                                <select id="hedefBanka" class="w-full p-2 border border-orange-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-slate-700 dark:text-white">
+                                    <option value="" disabled selected>Banka Seçiniz</option>
+                                    <option value="Akbank">Akbank</option>
+                                    <option value="Albaraka Türk">Albaraka Türk</option>
+                                    <option value="Alternatif Bank">Alternatif Bank</option>
+                                    <option value="Anadolubank">Anadolubank</option>
+                                    <option value="Burgan Bank">Burgan Bank</option>
+                                    <option value="DenizBank">DenizBank</option>
+                                    <option value="Emlak Katılım">Emlak Katılım</option>
+                                    <option value="Enpara.com">Enpara.com</option>
+                                    <option value="Fibabanka">Fibabanka</option>
+                                    <option value="Garanti BBVA">Garanti BBVA</option>
+                                    <option value="Halkbank">Halkbank</option>
+                                    <option value="ING">ING</option>
+                                    <option value="Kuveyt Türk">Kuveyt Türk</option>
+                                    <option value="Odeabank">Odeabank</option>
+                                    <option value="QNB">QNB (Finansbank)</option>
+                                    <option value="Şekerbank">Şekerbank</option>
+                                    <option value="TEB">TEB (Türk Ekonomi Bankası)</option>
+                                    <option value="Türkiye Finans">Türkiye Finans</option>
+                                    <option value="Türkiye İş Bankası">Türkiye İş Bankası</option>
+                                    <option value="VakıfBank">VakıfBank</option>
+                                    <option value="Vakıf Katılım">Vakıf Katılım</option>
+                                    <option value="Yapı Kredi">Yapı Kredi</option>
+                                    <option value="Ziraat Bankası">Ziraat Bankası</option>
+                                    <option value="Ziraat Katılım">Ziraat Katılım</option>
+                                    <option value="Diğer">Diğer...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Hedef Hesap Türü</label>
+                                <select id="hedefKredi" class="w-full p-2 border border-orange-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-slate-700 dark:text-white">
+                                    <option value="Vadesiz">Vadesiz Hesap</option>
+                                    <option value="Taksitli Kredi">Taksitli Kredi</option>
+                                    <option value="KMH">KMH (Ek Hesap)</option>
+                                    <option value="Kredi Kartı">Kredi Kartı</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="islemKaydet()" class="mt-4 w-full bg-info hover:bg-blue-600 text-white font-bold py-3 px-4 rounded shadow-lg transition duration-200 flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-save"></i> İşlemi Sisteme İşle
+                    </button>
+                    
+                    <p class="text-[11px] text-center text-gray-500 dark:text-gray-400 mt-2"><i class="fa-solid fa-robot"></i> AI: İşlemleriniz çift taraflı kayıt kuralına göre denetlenir.</p>
+                </form>
+            </div>
+
+            <!-- SAĞ PANEL: RAPORLAMA -->
+            <div class="w-full md:w-2/3 flex flex-col gap-4 h-full">
+                
+                <!-- Son İşlem Bildirimi -->
+                <div class="glass-panel rounded-xl shadow p-4 border-l-4 border-l-info flex items-start gap-3">
+                    <div class="text-info text-2xl pt-1"><i class="fa-solid fa-bolt"></i></div>
+                    <div class="flex-grow">
+                        <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase mb-1">Yapay Zeka Son İşlem Analizi</h3>
+                        <p id="sonIslemDetayi" class="text-gray-600 dark:text-gray-400 text-sm">Sistem hazır ve beklemede. Lütfen ilk işleminizi girin veya bakiyelerinizi tanımlayın.</p>
+                    </div>
+                </div>
+
+                <!-- Bakiye Tablosu -->
+                <div class="glass-panel rounded-xl shadow-lg p-0 flex-grow flex flex-col overflow-hidden border-t-4 border-t-secondary">
+                    <div class="p-4 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-info"></i> Güncel Varlık Dağılımı
+                        </h2>
+                        <div id="toplamVarlik" class="text-sm font-bold bg-white dark:bg-slate-900 px-3 py-1 rounded border dark:border-gray-600 shadow-sm">
+                            Net Durum: <span class="text-gray-500">Hesaplanıyor...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-y-auto custom-scrollbar flex-grow p-0">
+                        <table class="w-full text-left border-collapse" id="bakiyeTablosu">
+                            <thead class="bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-400 sticky top-0 shadow-sm text-xs uppercase z-10">
+                                <tr>
+                                    <th class="p-3 border-b dark:border-gray-700">Banka Adı</th>
+                                    <th class="p-3 border-b dark:border-gray-700">Eylem Türü</th>
+                                    <th class="p-3 border-b dark:border-gray-700 text-right">Güncel Bakiye</th>
+                                    <th class="p-3 border-b dark:border-gray-700 text-center w-16">Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm dark:text-gray-300" id="bakiyeTablosuBody">
+                                <tr>
+                                    <td colspan="4" class="p-8 text-center text-gray-400 dark:text-gray-600 italic">
+                                        <i class="fa-solid fa-database text-3xl mb-2"></i><br>
+                                        Henüz kayıtlı hesap bulunmamaktadır.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Loglar -->
+                <div class="glass-panel rounded-xl shadow p-4 h-64 flex flex-col overflow-hidden border-t-4 border-t-gray-400 dark:border-t-slate-600">
+                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase mb-3 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                        <i class="fa-solid fa-list-ul"></i> İşlem Geçmişi (Son 20)
+                    </h3>
+                    <ul id="logListesi" class="overflow-y-auto custom-scrollbar flex-grow space-y-2 pr-2">
+                        <li class="text-center text-gray-400 dark:text-gray-600 text-sm italic py-4">İşlem geçmişi boş.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- HAFIZA KULLANIM BARI (FOOTER) -->
+    <footer class="bg-primary border-t border-secondary text-gray-300 text-[11px] py-1 px-4 flex justify-between items-center z-20">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-brain text-info"></i>
+            <span>Bütçe Defteri AI Core v2.0 | Context Hafızası:</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="verileriSifirla()" class="text-danger hover:text-red-400 font-bold flex items-center gap-1 transition-colors" title="Tüm verileri sil">
+                <i class="fa-solid fa-trash-can"></i> Temizle
+            </button>
+            <div class="flex items-center gap-2">
+                <div class="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div id="memoryBar" class="h-full bg-success transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <span id="memoryUsage" class="font-bold text-success w-12 text-right">%0.00</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- HIZLI KURULUM MODALI -->
+    <div id="hizliKurulumModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex items-start pt-16 sm:pt-24 justify-center backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 w-11/12 md:w-3/4 lg:w-2/3 max-h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-slate-700 my-8">
+            <div class="bg-primary text-white p-4 flex justify-between items-center shrink-0">
+                <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-bolt text-warning"></i> Hızlı Başlangıç Bakiyesi Ekle</h2>
+                <button onclick="toggleKurulumModal()" class="text-gray-300 hover:text-white text-2xl leading-none transition-colors">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow bg-gray-50 dark:bg-slate-900">
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+                    <div class="flex flex-col md:flex-row gap-4 items-end">
+                        <div class="flex-grow w-full md:w-auto">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Banka Adı</label>
+                            <select id="modalBanka" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-gray-50 dark:bg-slate-700 dark:text-white">
+                                <option value="" disabled selected>Banka Seçiniz</option>
+                                <option value="Akbank">Akbank</option>
+                                <option value="Albaraka Türk">Albaraka Türk</option>
+                                <option value="Alternatif Bank">Alternatif Bank</option>
+                                <option value="Anadolubank">Anadolubank</option>
+                                <option value="Burgan Bank">Burgan Bank</option>
+                                <option value="DenizBank">DenizBank</option>
+                                <option value="Emlak Katılım">Emlak Katılım</option>
+                                <option value="Enpara.com">Enpara.com</option>
+                                <option value="Fibabanka">Fibabanka</option>
+                                <option value="Garanti BBVA">Garanti BBVA</option>
+                                <option value="Halkbank">Halkbank</option>
+                                <option value="ING">ING</option>
+                                <option value="Kuveyt Türk">Kuveyt Türk</option>
+                                <option value="Odeabank">Odeabank</option>
+                                <option value="QNB">QNB (Finansbank)</option>
+                                <option value="Şekerbank">Şekerbank</option>
+                                <option value="TEB">TEB (Türk Ekonomi Bankası)</option>
+                                <option value="Türkiye Finans">Türkiye Finans</option>
+                                <option value="Türkiye İş Bankası">Türkiye İş Bankası</option>
+                                <option value="VakıfBank">VakıfBank</option>
+                                <option value="Vakıf Katılım">Vakıf Katılım</option>
+                                <option value="Yapı Kredi">Yapı Kredi</option>
+                                <option value="Ziraat Bankası">Ziraat Bankası</option>
+                                <option value="Ziraat Katılım">Ziraat Katılım</option>
+                                <option value="Diğer">Diğer...</option>
+                            </select>
+                        </div>
+                        <div class="flex-grow w-full md:w-auto">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Hesap Türü</label>
+                            <select id="modalKredi" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-gray-50 dark:bg-slate-700 dark:text-white">
+                                <option value="Vadesiz">Vadesiz Hesap</option>
+                                <option value="Taksitli Kredi">Taksitli Kredi</option>
+                                <option value="KMH">KMH (Ek Hesap)</option>
+                                <option value="Kredi Kartı">Kredi Kartı</option>
+                            </select>
+                        </div>
+                        <div class="w-full md:w-1/4 relative">
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Bakiye (TL)</label>
+                            <input type="text" inputmode="numeric" id="modalTutar" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm text-right font-bold text-gray-800 dark:text-white bg-gray-50 dark:bg-slate-700" placeholder="0">
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1 absolute whitespace-nowrap">Borç ise eksi (-) girin.</p>
+                        </div>
+                        <div class="w-full md:w-auto mt-6 md:mt-0">
+                            <button onclick="hizliHesapEkle()" class="w-full bg-success hover:bg-green-600 text-white px-6 py-2 rounded text-sm font-bold shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FİNANSAL DURUM MODALI -->
+    <div id="finansalDurumModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-50 flex items-start pt-16 sm:pt-24 justify-center backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 w-11/12 md:w-3/4 lg:w-2/3 max-h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-slate-700 my-8">
+            <div class="bg-primary text-white p-4 flex justify-between items-center shrink-0">
+                <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-chart-pie text-success"></i> Detaylı Finansal Durum</h2>
+                <button onclick="toggleDurumModal()" class="text-gray-300 hover:text-white text-2xl leading-none transition-colors">&times;</button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto custom-scrollbar flex-grow bg-gray-50 dark:bg-slate-900">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+                    <div class="p-4 bg-gray-100 dark:bg-slate-900 border-b dark:border-slate-700 flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase flex items-center gap-2"><i class="fa-solid fa-list-check text-info"></i> Tüm Hesaplar</h3>
+                        <div id="modalToplamVarlik" class="text-sm font-bold bg-white dark:bg-slate-800 px-3 py-1 rounded shadow-sm border dark:border-slate-600"></div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-xs uppercase border-b dark:border-slate-700">
+                                <tr>
+                                    <th class="p-3">Banka Adı</th>
+                                    <th class="p-3">Hesap Türü</th>
+                                    <th class="p-3 text-right">Güncel Bakiye</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm dark:text-gray-300" id="modalBakiyeTablosuBody">
+                                <tr>
+                                    <td colspan="3" class="p-6 text-center text-gray-400 dark:text-gray-600 italic">Henüz hesap tanımlanmadı.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Hesap Türü Özeti -->
+                <div class="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+                    <div class="p-4 bg-gray-100 dark:bg-slate-900 border-b dark:border-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-warning"></i>
+                        <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase">Hesap Türü Dağılımı</h3>
+                    </div>
+                    <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4" id="hesapTuruOzetiContainer">
+                        <div class="text-center text-gray-400 dark:text-gray-600 text-sm italic col-span-full">Henüz hesap tanımlanmadı.</div>
+                    </div>
+                </div>
+
+                <!-- KMH Faiz Hesaplama Özeti -->
+                <div class="mt-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+                    <div class="p-4 bg-gray-100 dark:bg-slate-900 border-b dark:border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-scale-unbalanced text-orange-500"></i>
+                            <h3 class="text-sm font-bold text-gray-800 dark:text-white uppercase">KMH Faiz Projeksiyonu (Bu Ay)</h3>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 px-3 rounded border dark:border-slate-600 shadow-sm">
+                            <label class="text-[11px] font-bold text-gray-600 dark:text-gray-400 uppercase">Aylık KMH Faizi (%):</label>
+                            <input type="text" inputmode="decimal" id="kmhFaizInput" value="4,25" class="w-16 p-1 bg-transparent border-b-2 border-orange-300 dark:border-orange-500 text-xs text-center font-black text-orange-600 dark:text-orange-400 focus:outline-none focus:border-info transition-colors">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-[11px] uppercase border-b dark:border-slate-700">
+                                <tr>
+                                    <th class="p-3">Hesap Adı</th>
+                                    <th class="p-3 text-right">Güncel KMH Borcu</th>
+                                    <th class="p-3 text-right text-danger">Ay Sonu Tahmini Faiz</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm dark:text-gray-300" id="kmhFaizTablosuBody">
+                                <tr>
+                                    <td colspan="3" class="p-6 text-center text-gray-400 dark:text-gray-600 italic">KMH hesabınızda borç bakiyesi bulunmuyor.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="p-3 bg-orange-50 dark:bg-slate-800/80 text-[10px] text-gray-600 dark:text-gray-400 border-t dark:border-slate-700 flex gap-2">
+                            <i class="fa-solid fa-circle-info mt-0.5 text-orange-500"></i>
+                            <p>TCMB formülüne göre %15 KKDF ve %15 BSMV dâhil edilerek hesaplanmıştır. İçinde bulunduğumuz ayın son gününe kadarki projeksiyonu yansıtır. Hesaba günlük para giriş/çıkışı oldukça AI tarafından baştan hesaplanır.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ÖZEL UYARI VE ONAY PENCERESİ (CUSTOM MODAL) -->
+    <div id="customDialogOverlay" class="hidden fixed inset-0 bg-gray-900 bg-opacity-70 z-[100] flex items-start pt-24 justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 w-11/12 md:w-1/3 rounded-xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-slate-700 transform transition-transform scale-95" id="customDialogBox">
+            <div class="p-5 flex items-start gap-4">
+                <div id="customDialogIcon" class="text-3xl mt-1"></div>
+                <div>
+                    <h3 id="customDialogTitle" class="text-lg font-bold text-gray-800 dark:text-white mb-1"></h3>
+                    <p id="customDialogMessage" class="text-sm text-gray-600 dark:text-gray-300"></p>
+                </div>
+            </div>
+            <div class="bg-gray-50 dark:bg-slate-900 p-4 flex justify-end gap-3 border-t dark:border-slate-700">
+                <button id="customDialogCancelBtn" class="hidden px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-gray-800 dark:text-gray-200 rounded text-sm font-bold transition">İptal</button>
+                <button id="customDialogConfirmBtn" class="px-4 py-2 bg-info hover:bg-blue-600 text-white rounded text-sm font-bold transition">Tamam</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sayfa yüklendiğinde bugünün tarihini ayarla
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const tarihEl = document.getElementById('tarih');
+            if(tarihEl) tarihEl.valueAsDate = today;
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateDisplay = document.getElementById('currentDateDisplay');
+            if(dateDisplay) dateDisplay.textContent = today.toLocaleDateString('tr-TR', options);
+            
+            // Format Event Listeners
+            const tutarEl = document.getElementById('tutar');
+            if(tutarEl) tutarEl.addEventListener('input', formatTutarInput);
+            
+            const modalTutarEl = document.getElementById('modalTutar');
+            if(modalTutarEl) modalTutarEl.addEventListener('input', formatTutarInput);
+
+            // Temayı Başlat
+            initTheme();
+
+            // Verileri Yükle
+            verileriYukle();
+        });
+
+        // Veritabanı (Hafıza)
+        let bakiyeler = {}; 
+        let loglar = [];
+        let islemSayaci = 0;
+        let kmhFaizOrani = 4.25; // Yeni KMH Global Değişkeni
+
+        // --- VERİ KALICILIĞI (LOCAL STORAGE) ---
+        function verileriKaydet() {
+            const data = { bakiyeler, loglar, islemSayaci, kmhFaizOrani };
+            localStorage.setItem('butceDefteriData', JSON.stringify(data));
+        }
+
+        function verileriYukle() {
+            const dataStr = localStorage.getItem('butceDefteriData');
+            if (dataStr) {
+                try {
+                    const data = JSON.parse(dataStr);
+                    bakiyeler = data.bakiyeler || {};
+                    loglar = data.loglar || [];
+                    islemSayaci = data.islemSayaci || 0;
+                    if(data.kmhFaizOrani !== undefined) {
+                        kmhFaizOrani = data.kmhFaizOrani;
+                        const faizInput = document.getElementById('kmhFaizInput');
+                        if(faizInput) faizInput.value = kmhFaizOrani.toString().replace('.', ',');
+                    }
+                } catch (e) {
+                    console.error("Veri yükleme hatası", e);
+                }
+            }
+            arayuzuGuncelle();
+        }
+
+        function verileriSifirla() {
+            showCustomConfirm("Tüm bütçe verileriniz, geçmişiniz ve bakiyeleriniz kalıcı olarak silinecek. Emin misiniz?", () => {
+                bakiyeler = {};
+                loglar = [];
+                islemSayaci = 0;
+                localStorage.removeItem('butceDefteriData');
+                arayuzuGuncelle();
+                showCustomAlert("Tüm veriler başarıyla sıfırlandı.", "Temizlendi", false);
+            }, "Verileri Sıfırla");
+        }
+
+        // --- TEMA (DARK/LIGHT) YÖNETİMİ ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('butceDefteriTheme');
+            const htmlEl = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (savedTheme === 'light') {
+                htmlEl.classList.remove('dark');
+                if(themeIcon) {
+                    themeIcon.classList.remove('fa-sun', 'text-yellow-400');
+                    themeIcon.classList.add('fa-moon', 'text-slate-200');
+                }
+            } else {
+                htmlEl.classList.add('dark');
+                if(themeIcon) {
+                    themeIcon.classList.remove('fa-moon', 'text-slate-200');
+                    themeIcon.classList.add('fa-sun', 'text-yellow-400');
+                }
+            }
+        }
+
+        function toggleTheme() {
+            const htmlEl = document.documentElement;
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (htmlEl.classList.contains('dark')) {
+                htmlEl.classList.remove('dark');
+                localStorage.setItem('butceDefteriTheme', 'light');
+                themeIcon.classList.remove('fa-sun', 'text-yellow-400');
+                themeIcon.classList.add('fa-moon', 'text-slate-200');
+            } else {
+                htmlEl.classList.add('dark');
+                localStorage.setItem('butceDefteriTheme', 'dark');
+                themeIcon.classList.remove('fa-moon', 'text-slate-200');
+                themeIcon.classList.add('fa-sun', 'text-yellow-400');
+            }
+        }
+
+        // --- HAFIZA KULLANIMI HESAPLAMA ---
+        function updateMemoryUsage() {
+            const dataStr = JSON.stringify({bakiyeler, loglar});
+            const bytes = new Blob([dataStr]).size;
+            const maxBytes = 5 * 1024 * 1024; // 5MB limit
+            const percentage = ((bytes / maxBytes) * 100).toFixed(4);
+            
+            const memoryEl = document.getElementById('memoryUsage');
+            const memoryBar = document.getElementById('memoryBar');
+            
+            if(memoryEl && memoryBar) {
+                memoryEl.innerText = `%${percentage}`;
+                memoryBar.style.width = `${Math.min(percentage * 1000, 100)}%`; 
+                
+                memoryEl.className = memoryEl.className.replace(/text-(success|warning|danger)/g, '');
+                memoryBar.className = memoryBar.className.replace(/bg-(success|warning|danger)/g, '');
+                
+                if(percentage > 80) {
+                    memoryEl.classList.add('text-danger');
+                    memoryBar.classList.add('bg-danger');
+                }
+                else if(percentage > 50) {
+                    memoryEl.classList.add('text-warning');
+                    memoryBar.classList.add('bg-warning');
+                }
+                else {
+                    memoryEl.classList.add('text-success');
+                    memoryBar.classList.add('bg-success');
+                }
+            }
+        }
+
+        // --- ÖZEL MODAL FONKSİYONLARI ---
+        function showCustomAlert(message, title = "Uyarı", isError = true) {
+            const overlay = document.getElementById('customDialogOverlay');
+            document.getElementById('customDialogTitle').innerText = title;
+            document.getElementById('customDialogMessage').innerText = message;
+            document.getElementById('customDialogIcon').innerHTML = isError ? '<i class="fa-solid fa-circle-exclamation text-danger"></i>' : '<i class="fa-solid fa-circle-info text-info"></i>';
+            
+            document.getElementById('customDialogCancelBtn').classList.add('hidden');
+            const confirmBtn = document.getElementById('customDialogConfirmBtn');
+            confirmBtn.innerText = "Tamam";
+            confirmBtn.className = "px-4 py-2 bg-info hover:bg-blue-600 text-white rounded text-sm font-bold transition";
+            
+            confirmBtn.onclick = () => { overlay.classList.add('hidden'); };
+            overlay.classList.remove('hidden');
+        }
+
+        function showCustomConfirm(message, onConfirm, title = "Onay Gerekli") {
+            const overlay = document.getElementById('customDialogOverlay');
+            document.getElementById('customDialogTitle').innerText = title;
+            document.getElementById('customDialogMessage').innerText = message;
+            document.getElementById('customDialogIcon').innerHTML = '<i class="fa-solid fa-circle-question text-warning"></i>';
+            
+            const cancelBtn = document.getElementById('customDialogCancelBtn');
+            cancelBtn.classList.remove('hidden');
+            cancelBtn.onclick = () => { overlay.classList.add('hidden'); };
+            
+            const confirmBtn = document.getElementById('customDialogConfirmBtn');
+            confirmBtn.innerText = "Evet, İptal Et";
+            confirmBtn.className = "px-4 py-2 bg-danger hover:bg-red-600 text-white rounded text-sm font-bold transition";
+            
+            confirmBtn.onclick = () => {
+                overlay.classList.add('hidden');
+                if(onConfirm) onConfirm();
+            };
+            
+            overlay.classList.remove('hidden');
+        }
+
+        // --- KMH GÜNLÜK FAİZ HESAPLAMA MOTORU ---
+        const kmhInput = document.getElementById('kmhFaizInput');
+        if(kmhInput) {
+            kmhInput.addEventListener('input', (e) => {
+                let val = e.target.value.replace(/[^0-9,]/g, ''); 
+                let parts = val.split(',');
+                if (parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
+                e.target.value = val;
+                
+                let parsed = parseFloat(val.replace(',', '.'));
+                if (!isNaN(parsed) && parsed >= 0) {
+                    kmhFaizOrani = parsed;
+                    verileriKaydet();
+                    arayuzuGuncelle(); 
+                }
+            });
+        }
+
+        function getEndOfDayBalance(hesapKey, targetDateStr) {
+            let bakiye = 0;
+            for (let log of loglar) {
+                if (log.tarih <= targetDateStr) {
+                    const r = log.raw;
+                    if (r.kaynakKey === hesapKey) {
+                        if (r.tip === 'İlave' || r.tip === 'Açılış (Alacak)') bakiye += r.tutar;
+                        else if (r.tip === 'Harcama' || r.tip === 'Açılış (Borç)' || r.tip === 'Aktarma') bakiye -= r.tutar;
+                    }
+                    if (r.hedefKey === hesapKey && r.tip === 'Aktarma') {
+                        bakiye += r.tutar;
+                    }
+                }
+            }
+            return bakiye;
+        }
+
+        function hesaplaAylikKMHFaizi(hesapKey) {
+            let totalInterest = 0;
+            let today = new Date();
+            let currentYear = today.getFullYear();
+            let currentMonth = today.getMonth(); 
+            let lastDay = new Date(currentYear, currentMonth + 1, 0).getDate(); 
+
+            for (let day = 1; day <= lastDay; day++) {
+                let monthStr = String(currentMonth + 1).padStart(2, '0');
+                let dayStr = String(day).padStart(2, '0');
+                let dateStr = `${currentYear}-${monthStr}-${dayStr}`;
+
+                let endOfDayBalance = getEndOfDayBalance(hesapKey, dateStr);
+                
+                if (endOfDayBalance < 0) {
+                    let anaPara = Math.abs(endOfDayBalance);
+                    let dailyInterest = anaPara * (kmhFaizOrani / 100) / 30;
+                    totalInterest += dailyInterest;
+                }
+            }
+            return totalInterest * 1.30; 
+        }
+
+        // --- TUTAR FORMATLAMA FONKSİYONLARI ---
+        function formatTutarInput(e) {
+            let val = e.target.value;
+            const isAktarmaEl = document.getElementById('isAktarma');
+            const isAktarma = isAktarmaEl ? isAktarmaEl.checked : false;
+            let isNegative = val.startsWith('-');
+            
+            if (isAktarma && e.target.id === 'tutar') {
+                isNegative = false; 
+                val = val.replace(/-/g, '');
+            }
+            
+            val = val.replace(/[^0-9]/g, '');
+            
+            if (val) {
+                val = val.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+            
+            if (isNegative && val) {
+                val = '-' + val;
+            } else if (isNegative && !val) {
+                val = '-';
+            }
+            
+            e.target.value = val;
+            if(e.target.id === 'tutar') renkGuncelle();
+        }
+
+        function parseTutarStr(valStr) {
+            if (!valStr) return NaN;
+            let cleaned = valStr.replace(/\./g, '');
+            return parseInt(cleaned, 10);
+        }
+
+        function floatToInputStr(num) {
+            if (isNaN(num)) return '';
+            let isNegative = num < 0;
+            let result = Math.abs(Math.round(num)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return isNegative ? '-' + result : result;
+        }
+
+        function toggleHedefAlanlar() {
+            const aktarmaEl = document.getElementById('isAktarma');
+            if(!aktarmaEl) return;
+            const isAktarma = aktarmaEl.checked;
+            const hedefAlanlar = document.getElementById('hedefAlanlar');
+            const hedefBanka = document.getElementById('hedefBanka');
+            
+            if (isAktarma) {
+                if(hedefAlanlar) hedefAlanlar.classList.remove('hidden');
+                if(hedefBanka) hedefBanka.required = true;
+            } else {
+                if(hedefAlanlar) hedefAlanlar.classList.add('hidden');
+                if(hedefBanka) hedefBanka.required = false;
+            }
+            renkGuncelle();
+        }
+
+        function renkGuncelle() {
+            const aktarmaEl = document.getElementById('isAktarma');
+            const isAktarma = aktarmaEl ? aktarmaEl.checked : false;
+            const tutarInput = document.getElementById('tutar');
+            if(!tutarInput) return;
+            
+            tutarInput.className = tutarInput.className.replace(/text-(success|danger|warning|gray-800)/g, '');
+            
+            if (isAktarma) {
+                tutarInput.classList.add('text-warning');
+            } else {
+                const val = parseTutarStr(tutarInput.value);
+                if (val > 0) tutarInput.classList.add('text-success');
+                else if (val < 0) tutarInput.classList.add('text-danger');
+                else tutarInput.classList.add('text-gray-800', 'dark:text-white');
+            }
+        }
+
+        function generateId() {
+            return 'tx_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function toggleKurulumModal() {
+            const modal = document.getElementById('hizliKurulumModal');
+            if(modal) modal.classList.toggle('hidden');
+        }
+
+        function toggleDurumModal() {
+            const modal = document.getElementById('finansalDurumModal');
+            if(modal) modal.classList.toggle('hidden');
+        }
+
+        // Hızlı Başlangıç Hesabı Ekleme
+        function hizliHesapEkle() {
+            const banka = document.getElementById('modalBanka').value;
+            const kredi = document.getElementById('modalKredi').value;
+            let tutar = parseTutarStr(document.getElementById('modalTutar').value);
+            const tarih = document.getElementById('tarih').value || new Date().toISOString().split('T')[0];
+
+            if (kredi === 'Kredi Kartı' && tutar > 0) {
+                tutar = -Math.abs(tutar);
+            }
+
+            if (!banka || isNaN(tutar)) {
+                showCustomAlert("Lütfen bir banka seçin ve geçerli bir bakiye tutarı girin.");
+                return;
+            }
+
+            let key = `${banka}|${kredi}`;
+            
+            if (!bakiyeler[key]) {
+                bakiyeler[key] = { banka: banka, kredi: kredi, bakiye: 0 };
+            }
+
+            if (kredi === 'Kredi Kartı' && (bakiyeler[key].bakiye + tutar > 0)) {
+                showCustomAlert("Kural Hatası: Kredi Kartı bakiyesi pozitif (+) olamaz.");
+                return;
+            }
+
+            bakiyeler[key].bakiye += tutar;
+
+            const isNegative = tutar < 0;
+            const islemTuru = isNegative ? "Açılış (Borç)" : "Açılış (Alacak)";
+            const badgeClass = isNegative ? "bg-danger" : "bg-success";
+            const iconClass = isNegative ? "fa-minus" : "fa-plus";
+            const tutarGosterim = Math.abs(tutar).toLocaleString('tr-TR');
+
+            const textClass = isNegative ? 'text-danger' : 'text-success';
+            const detayMesaji = `<span class="font-bold dark:text-gray-200">${banka} (${kredi})</span> hesabı için <span class="font-bold ${textClass}">${tutarGosterim} TL</span> başlangıç bakiyesi tanımlandı.`;
+
+            islemSayaci++;
+            loglar.push({
+                id: generateId(),
+                tarih: tarih,
+                islemTuru: islemTuru,
+                tutar: Math.abs(tutar),
+                detay: detayMesaji,
+                badgeClass: badgeClass,
+                iconClass: iconClass,
+                raw: { tip: isNegative ? 'Açılış (Borç)' : 'Açılış (Alacak)', kaynakKey: key, kaynakBanka: banka, kaynakKredi: kredi, tutar: Math.abs(tutar), orjinalTutar: tutar }
+            });
+
+            arayuzuGuncelle();
+            document.getElementById('modalTutar').value = '';
+            
+            toggleKurulumModal();
+            showCustomAlert("Başlangıç bakiyesi başarıyla eklendi.", "Başarılı", false);
+        }
+
+        // Ana İşlem Kaydet
+        function islemKaydet() {
+            const tarih = document.getElementById('tarih').value;
+            const isAktarma = document.getElementById('isAktarma').checked;
+            const kaynakBanka = document.getElementById('kaynakBanka').value;
+            const kaynakKredi = document.getElementById('kaynakKredi').value;
+            let tutar = parseTutarStr(document.getElementById('tutar').value);
+
+            if (isAktarma) {
+                tutar = Math.abs(tutar); 
+            }
+
+            if (!tarih || !kaynakBanka || isNaN(tutar) || tutar === 0) {
+                showCustomAlert("Lütfen Banka adını ve geçerli bir tutar giriniz (Sıfırdan farklı).");
+                return;
+            }
+
+            let kaynakKey = `${kaynakBanka}|${kaynakKredi}`;
+            
+            if (!bakiyeler[kaynakKey]) {
+                bakiyeler[kaynakKey] = { banka: kaynakBanka, kredi: kaynakKredi, bakiye: 0 };
+            }
+
+            let detayMesaji = "";
+            let badgeClass = "";
+            let iconClass = "";
+            let islemTuruLabel = "";
+
+            if (!isAktarma) {
+                if (kaynakKredi === 'Kredi Kartı' && (bakiyeler[kaynakKey].bakiye + tutar > 0)) {
+                    showCustomAlert("Kural Hatası: Kredi Kartı bakiyesi hiçbir zaman pozitif (+) olamaz.");
+                    return;
+                }
+                bakiyeler[kaynakKey].bakiye += tutar;
+                if (tutar > 0) {
+                    islemTuruLabel = "İlave";
+                    detayMesaji = `<span class="font-bold dark:text-gray-200">${kaynakBanka} (${kaynakKredi})</span> hesabına <span class="font-bold text-success">${tutar.toLocaleString('tr-TR')} TL</span> ilave edildi.`;
+                    badgeClass = "bg-success";
+                    iconClass = "fa-plus";
+                } else {
+                    islemTuruLabel = "Harcama";
+                    detayMesaji = `<span class="font-bold dark:text-gray-200">${kaynakBanka} (${kaynakKredi})</span> hesabından <span class="font-bold text-danger">${Math.abs(tutar).toLocaleString('tr-TR')} TL</span> harcandı.`;
+                    badgeClass = "bg-danger";
+                    iconClass = "fa-minus";
+                }
+            } 
+            else {
+                const hedefBanka = document.getElementById('hedefBanka').value;
+                const hedefKredi = document.getElementById('hedefKredi').value;
+                
+                if (!hedefBanka) {
+                    showCustomAlert("Aktarma işlemi için Hedef Banka girilmelidir!");
+                    return;
+                }
+
+                let hedefKey = `${hedefBanka}|${hedefKredi}`;
+                
+                if (!bakiyeler[hedefKey]) {
+                    bakiyeler[hedefKey] = { banka: hedefBanka, kredi: hedefKredi, bakiye: 0 };
+                }
+
+                if (kaynakKredi === 'Kredi Kartı' && (bakiyeler[kaynakKey].bakiye - tutar > 0)) {
+                    showCustomAlert("Kural Hatası: Kaynak Kredi Kartı bakiyesi pozitif (+) olamaz.");
+                    return;
+                }
+                if (hedefKredi === 'Kredi Kartı' && (bakiyeler[hedefKey].bakiye + tutar > 0)) {
+                    showCustomAlert("Kural Hatası: Hedef kredi kartına borcundan fazla para aktaramazsınız.");
+                    return;
+                }
+
+                bakiyeler[kaynakKey].bakiye -= tutar;
+                bakiyeler[hedefKey].bakiye += tutar;
+                
+                islemTuruLabel = "Aktarma";
+                detayMesaji = `<span class="font-bold dark:text-gray-200">${kaynakBanka} (${kaynakKredi})</span> hesabından, <span class="font-bold dark:text-gray-200">${hedefBanka} (${hedefKredi})</span> hesabına <span class="font-bold text-warning">${tutar.toLocaleString('tr-TR')} TL</span> aktarıldı.`;
+                badgeClass = "bg-warning";
+                iconClass = "fa-exchange-alt";
+            }
+
+            islemSayaci++;
+            loglar.push({
+                id: generateId(), tarih: tarih, islemTuru: islemTuruLabel, tutar: Math.abs(tutar), detay: detayMesaji, badgeClass: badgeClass, iconClass: iconClass,
+                raw: { tip: isAktarma ? 'Aktarma' : (tutar > 0 ? 'İlave' : 'Harcama'), kaynakKey: kaynakKey, kaynakBanka: kaynakBanka, kaynakKredi: kaynakKredi, hedefKey: isAktarma ? `${document.getElementById('hedefBanka').value}|${document.getElementById('hedefKredi').value}` : null, hedefBanka: isAktarma ? document.getElementById('hedefBanka').value : null, hedefKredi: isAktarma ? document.getElementById('hedefKredi').value : null, tutar: Math.abs(tutar), orjinalTutar: tutar }
+            });
+
+            arayuzuGuncelle();
+            
+            document.getElementById('tutar').value = '';
+            renkGuncelle();
+            
+            const btn = document.querySelector('button[onclick="islemKaydet()"]');
+            if(btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Sisteme İşlendi!';
+                btn.classList.replace('bg-info', 'bg-success');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.replace('bg-success', 'bg-info');
+                }, 1000);
+            }
+        }
+
+        function arayuzuGuncelle() {
+            if (loglar.length > 0) {
+                const sonLog = loglar[loglar.length - 1];
+                const detayEl = document.getElementById('sonIslemDetayi');
+                if(detayEl) detayEl.innerHTML = sonLog.detay;
+            }
+
+            const tbody = document.getElementById('bakiyeTablosuBody');
+            const modalTbody = document.getElementById('modalBakiyeTablosuBody');
+            
+            if(tbody) tbody.innerHTML = "";
+            if(modalTbody) modalTbody.innerHTML = "";
+            
+            let netVarlik = 0;
+            let hesapSayisi = Object.keys(bakiyeler).length;
+            let krediTurleriToplam = {}; 
+
+            const siraliBakiyeler = Object.values(bakiyeler).sort((a, b) => a.banka.localeCompare(b.banka));
+
+            if (hesapSayisi === 0) {
+                if(tbody) tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-gray-400 italic">Kayıtlı hesap bulunmuyor.</td></tr>`;
+                if(modalTbody) modalTbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 italic">Henüz hesap tanımlanmadı.</td></tr>`;
+            } else {
+                siraliBakiyeler.forEach(h => {
+                    netVarlik += h.bakiye;
+                    
+                    if (!krediTurleriToplam[h.kredi]) {
+                        krediTurleriToplam[h.kredi] = 0;
+                    }
+                    krediTurleriToplam[h.kredi] += h.bakiye;
+
+                    const isNegative = h.bakiye < 0;
+                    const bakiyeRenk = isNegative ? 'text-danger' : 'text-success';
+                    const durumIkon = isNegative ? '<i class="fa-solid fa-arrow-down text-danger"></i>' : '<i class="fa-solid fa-arrow-up text-success"></i>';
+                    const bakiyeFormat = h.bakiye.toLocaleString('tr-TR');
+                    
+                    let krediBadgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                    if (h.kredi.includes('Vadesiz')) {
+                        krediBadgeClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+                    } else if (h.kredi.includes('Taksitli')) {
+                        krediBadgeClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                    } else if (h.kredi.includes('KMH')) {
+                        krediBadgeClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+                    } else if (h.kredi.includes('Kart')) {
+                        krediBadgeClass = 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200';
+                    }
+
+                    if (tbody) {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800";
+                        tr.innerHTML = `
+                            <td class="p-3 font-semibold text-gray-700 dark:text-gray-200">${h.banka}</td>
+                            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${krediBadgeClass}">${h.kredi}</span></td>
+                            <td class="p-3 text-right font-bold ${bakiyeRenk} font-mono text-base">${bakiyeFormat} ₺</td>
+                            <td class="p-3 text-center bg-gray-50 dark:bg-slate-800">${h.bakiye === 0 ? '<i class="fa-solid fa-minus text-gray-400"></i>' : durumIkon}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
+
+                    if (modalTbody) {
+                        const modalTr = document.createElement('tr');
+                        modalTr.className = "border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800";
+                        modalTr.innerHTML = `
+                            <td class="p-3 font-semibold text-gray-700 dark:text-gray-200">${h.banka}</td>
+                            <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${krediBadgeClass}">${h.kredi}</span></td>
+                            <td class="p-3 text-right font-bold ${bakiyeRenk} font-mono text-base">${bakiyeFormat} ₺</td>
+                        `;
+                        modalTbody.appendChild(modalTr);
+                    }
+                });
+            }
+
+            const netVarlikEl = document.getElementById('toplamVarlik');
+            const modalNetVarlikEl = document.getElementById('modalToplamVarlik');
+            const netVarlikFormat = netVarlik.toLocaleString('tr-TR');
+            
+            let varlikHtml = '';
+            if(netVarlik > 0) varlikHtml = `Net Durum: <span class="text-success">+${netVarlikFormat} ₺</span>`;
+            else if (netVarlik < 0) varlikHtml = `Net Durum: <span class="text-danger">${netVarlikFormat} ₺</span>`;
+            else varlikHtml = `Net Durum: <span class="text-gray-600 dark:text-gray-400">0.00 ₺</span>`;
+
+            if(netVarlikEl) netVarlikEl.innerHTML = varlikHtml;
+            if(modalNetVarlikEl) modalNetVarlikEl.innerHTML = varlikHtml;
+
+            const ozetContainer = document.getElementById('hesapTuruOzetiContainer');
+            if (ozetContainer) {
+                ozetContainer.innerHTML = '';
+                if (hesapSayisi === 0) {
+                    ozetContainer.innerHTML = `<div class="text-center text-gray-400 dark:text-gray-600 text-sm italic col-span-full">Henüz hesap tanımlanmadı.</div>`;
+                } else {
+                    for (const [krediTuru, toplam] of Object.entries(krediTurleriToplam)) {
+                        const isNegative = toplam < 0;
+                        const bakiyeRenk = isNegative ? 'text-danger' : 'text-success';
+                        const bakiyeFormat = toplam.toLocaleString('tr-TR');
+                        
+                        let icon = 'fa-wallet text-blue-500';
+                        if (krediTuru.includes('Vadesiz')) icon = 'fa-money-bill-wave text-emerald-500';
+                        else if (krediTuru.includes('Taksitli')) icon = 'fa-hand-holding-dollar text-purple-500';
+                        else if (krediTuru.includes('KMH')) icon = 'fa-scale-unbalanced text-orange-500';
+                        else if (krediTuru.includes('Kart')) icon = 'fa-credit-card text-rose-500';
+
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-50 dark:bg-slate-700/50 p-4 rounded-xl border border-gray-100 dark:border-slate-600 flex flex-col items-center justify-center text-center shadow-sm transition-transform hover:scale-105";
+                        card.innerHTML = `
+                            <div class="bg-white dark:bg-slate-800 p-3 rounded-full shadow-sm mb-3 border border-gray-100 dark:border-slate-600">
+                                <i class="fa-solid ${icon} text-2xl"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">${krediTuru}</span>
+                            <span class="text-base font-black ${bakiyeRenk} font-mono">${bakiyeFormat} ₺</span>
+                        `;
+                        ozetContainer.appendChild(card);
+                    }
+                }
+            }
+
+            const kmhTablosuBody = document.getElementById('kmhFaizTablosuBody');
+            if (kmhTablosuBody) {
+                let kmhHtml = "";
+                let totalKmhFaiz = 0;
+                let hasKmhDebt = false;
+
+                siraliBakiyeler.forEach(h => {
+                    if (h.kredi.includes('KMH')) {
+                        let key = `${h.banka}|${h.kredi}`;
+                        let tahminiFaiz = hesaplaAylikKMHFaizi(key);
+
+                        if (tahminiFaiz > 0) {
+                            hasKmhDebt = true;
+                            totalKmhFaiz += tahminiFaiz;
+                            
+                            let borcFormat = h.bakiye < 0 ? Math.abs(h.bakiye).toLocaleString('tr-TR') + ' ₺' : '<span class="text-success text-xs">Borç Kapatıldı</span>';
+                            let faizFormat = tahminiFaiz.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            
+                            kmhHtml += `
+                                <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800">
+                                    <td class="p-3 font-semibold text-gray-700 dark:text-gray-200"><i class="fa-solid fa-building-columns text-gray-400 text-xs mr-1"></i> ${h.banka}</td>
+                                    <td class="p-3 text-right font-bold text-gray-600 dark:text-gray-400 font-mono">${borcFormat}</td>
+                                    <td class="p-3 text-right font-bold text-danger font-mono">+${faizFormat} ₺</td>
+                                </tr>
+                            `;
+                        }
+                    }
+                });
+
+                if (hasKmhDebt) {
+                    kmhHtml += `
+                        <tr class="bg-red-50 dark:bg-red-900/20 font-bold border-t-2 border-red-200 dark:border-red-900">
+                            <td class="p-3 text-right text-gray-700 dark:text-gray-300" colspan="2">AY SONU EKLENECEK TOPLAM FAİZ:</td>
+                            <td class="p-3 text-right text-danger font-black font-mono tracking-wide">+${totalKmhFaiz.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
+                        </tr>
+                    `;
+                    kmhTablosuBody.innerHTML = kmhHtml;
+                } else {
+                    kmhTablosuBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-400 dark:text-gray-600 italic">KMH hesabınızda borç bakiyesi bulunmuyor.</td></tr>`;
+                }
+            }
+
+            const logListesi = document.getElementById('logListesi');
+            if(logListesi) {
+                logListesi.innerHTML = "";
+                const son20Log = loglar.slice(-20).reverse(); 
+                
+                if (son20Log.length === 0) {
+                    logListesi.innerHTML = `<li class="text-center text-gray-400 dark:text-gray-500 text-sm italic py-4">İşlem geçmişi boş.</li>`;
+                } else {
+                    son20Log.forEach(log => {
+                        const t = new Date(log.tarih);
+                        const tarihFormat = `${t.getDate().toString().padStart(2,'0')}.${(t.getMonth()+1).toString().padStart(2,'0')}.${t.getFullYear()}`;
+
+                        const li = document.createElement('li');
+                        li.className = "bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded p-3 text-sm flex gap-3 items-start shadow-sm";
+                        li.innerHTML = `
+                            <div class="${log.badgeClass} text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md border border-white/20">
+                                <i class="fa-solid ${log.iconClass} text-xs"></i>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="font-bold text-gray-700 dark:text-gray-200 text-xs uppercase tracking-wider">${log.islemTuru}</span>
+                                    <span class="text-xs text-gray-400 dark:text-gray-500"><i class="fa-regular fa-calendar"></i> ${tarihFormat}</span>
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-xs">${log.detay}</p>
+                                <div class="flex justify-end gap-3 border-t dark:border-slate-700 pt-2 mt-2">
+                                    <button onclick="islemDuzenle('${log.id}')" class="text-[11px] text-info hover:text-blue-400 font-bold transition flex items-center gap-1"><i class="fa-solid fa-pen"></i> Düzelt</button>
+                                    <button onclick="islemSil('${log.id}')" class="text-[11px] text-danger hover:text-red-400 font-bold transition flex items-center gap-1"><i class="fa-solid fa-trash"></i> İptal</button>
+                                </div>
+                            </div>
+                        `;
+                        logListesi.appendChild(li);
+                    });
+                }
+            }
+
+            verileriKaydet();
+            updateMemoryUsage();
+        }
+
+        function islemSil(id, sessiz = false) {
+            if (!sessiz) {
+                showCustomConfirm("Bu işlemi iptal etmek istediğinize emin misiniz? Bakiye hesaplamaları geri alınacaktır.", () => {
+                    performDelete(id, false);
+                });
+                return; 
+            }
+            performDelete(id, true);
+        }
+
+        function performDelete(id, sessiz) {
+            const logIndex = loglar.findIndex(l => l.id === id);
+            if (logIndex === -1) return false;
+
+            const raw = loglar[logIndex].raw;
+            let kaynakFark = 0, hedefFark = 0;
+
+            if (raw.tip === 'İlave' || raw.tip === 'Açılış (Alacak)') kaynakFark = -raw.tutar;
+            else if (raw.tip === 'Harcama' || raw.tip === 'Açılış (Borç)') kaynakFark = raw.tutar;
+            else if (raw.tip === 'Aktarma') { kaynakFark = raw.tutar; hedefFark = -raw.tutar; }
+
+            if (raw.kaynakKredi === 'Kredi Kartı' && (bakiyeler[raw.kaynakKey].bakiye + kaynakFark > 0)) {
+                if(!sessiz) showCustomAlert("İptal Hatası: Bu işlem Kredi Kartı bakiyesini artı duruma düşürüyor.");
+                return false;
+            }
+            if (raw.tip === 'Aktarma' && raw.hedefKredi === 'Kredi Kartı' && (bakiyeler[raw.hedefKey].bakiye + hedefFark > 0)) {
+                if(!sessiz) showCustomAlert("İptal Hatası: Bu işlem Hedef Kredi Kartı bakiyesini artı duruma düşürüyor.");
+                return false;
+            }
+
+            bakiyeler[raw.kaynakKey].bakiye += kaynakFark;
+            if (raw.tip === 'Aktarma') bakiyeler[raw.hedefKey].bakiye += hedefFark;
+
+            loglar.splice(logIndex, 1);
+            if (!sessiz) arayuzuGuncelle();
+            return true;
+        }
+
+        function islemDuzenle(id) {
+            const log = loglar.find(l => l.id === id);
+            if (!log) return;
+
+            const raw = log.raw;
+            document.getElementById('tarih').value = log.tarih;
+
+            if (raw.tip === 'Aktarma') {
+                document.getElementById('isAktarma').checked = true;
+                document.getElementById('kaynakBanka').value = raw.kaynakBanka;
+                document.getElementById('kaynakKredi').value = raw.kaynakKredi;
+                document.getElementById('hedefBanka').value = raw.hedefBanka;
+                document.getElementById('hedefKredi').value = raw.hedefKredi;
+                document.getElementById('tutar').value = floatToInputStr(raw.orjinalTutar);
+            } else if (raw.tip.includes('Açılış')) {
+                const modal = document.getElementById('hizliKurulumModal');
+                if (modal.classList.contains('hidden')) toggleKurulumModal();
+                document.getElementById('modalBanka').value = raw.kaynakBanka;
+                document.getElementById('modalKredi').value = raw.kaynakKredi;
+                document.getElementById('modalTutar').value = floatToInputStr(raw.orjinalTutar);
+            } else {
+                document.getElementById('isAktarma').checked = false;
+                document.getElementById('kaynakBanka').value = raw.kaynakBanka;
+                document.getElementById('kaynakKredi').value = raw.kaynakKredi;
+                document.getElementById('tutar').value = floatToInputStr(raw.orjinalTutar);
+            }
+
+            toggleHedefAlanlar();
+            renkGuncelle();
+            islemSil(id, true);
+            arayuzuGuncelle();
+
+            if (!raw.tip.includes('Açılış')) {
+                const formPanel = document.getElementById('islemForm').parentElement;
+                formPanel.classList.add('ring-4', 'ring-info', 'ring-opacity-50');
+                setTimeout(() => formPanel.classList.remove('ring-4', 'ring-info', 'ring-opacity-50'), 1500);
+            }
+        }
+        
+        toggleHedefAlanlar();
+    </script>
+</body>
+</html>
