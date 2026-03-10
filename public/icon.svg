@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="#0f172a"/>
+  <!-- Outer chip border -->
+  <rect x="120" y="120" width="272" height="272" rx="28" fill="#1e293b" stroke="#3742fa" stroke-width="10"/>
+  <!-- Inner blue circle -->
+  <circle cx="256" cy="256" r="88" fill="#3742fa"/>
+  <!-- ₺ symbol: vertical bar -->
+  <rect x="244" y="196" width="24" height="124" rx="12" fill="white"/>
+  <!-- ₺ symbol: two horizontal bars -->
+  <rect x="202" y="228" width="108" height="18" rx="9" fill="white"/>
+  <rect x="202" y="262" width="108" height="18" rx="9" fill="white"/>
+  <!-- Circuit lines - horizontal -->
+  <rect x="48" y="180" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="392" y="180" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="48" y="228" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="392" y="228" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="48" y="276" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="392" y="276" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="48" y="324" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <rect x="392" y="324" width="72" height="7" rx="3.5" fill="#3742fa"/>
+  <!-- Circuit lines - vertical -->
+  <rect x="180" y="48" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="228" y="48" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="276" y="48" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="324" y="48" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="180" y="392" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="228" y="392" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="276" y="392" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <rect x="324" y="392" width="7" height="72" rx="3.5" fill="#3742fa"/>
+  <!-- Green corner dots -->
+  <circle cx="48" cy="180" r="9" fill="#2ecc71"/>
+  <circle cx="464" cy="180" r="9" fill="#2ecc71"/>
+  <circle cx="48" cy="324" r="9" fill="#2ecc71"/>
+  <circle cx="464" cy="324" r="9" fill="#2ecc71"/>
+</svg>
