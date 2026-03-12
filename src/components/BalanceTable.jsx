@@ -12,7 +12,7 @@ export default function BalanceTable({ bakiyeler }) {
       : <span>Net Durum: <span className="text-gray-600 dark:text-gray-400">0.00 ₺</span></span>;
 
   return (
-    <div className="glass-panel rounded-xl shadow-lg p-0 flex-grow flex flex-col overflow-hidden border-t-4 border-t-secondary">
+    <div className="glass-panel rounded-xl shadow-lg p-0 flex-grow flex flex-col overflow-hidden border-t-4 border-t-secondary min-h-48 md:min-h-0">
       <div className="p-4 bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
           <i className="fa-solid fa-chart-pie text-info"></i> Güncel Varlık Dağılımı

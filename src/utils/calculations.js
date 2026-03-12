@@ -39,5 +39,7 @@ export function calcMemoryUsage(bakiyeler, loglar) {
   const dataStr = JSON.stringify({ bakiyeler, loglar });
   const bytes = new Blob([dataStr]).size;
   const maxBytes = 5 * 1024 * 1024;
-  return ((bytes / maxBytes) * 100).toFixed(4);
+  const pct = parseFloat(((bytes / maxBytes) * 100).toFixed(2));
+  const kb = (bytes / 1024).toFixed(1);
+  return { pct, kb };
 }

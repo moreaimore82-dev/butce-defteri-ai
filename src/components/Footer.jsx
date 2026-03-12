@@ -1,8 +1,7 @@
 import { calcMemoryUsage } from '../utils/calculations';
 
 export default function Footer({ bakiyeler, loglar, verileriSifirla }) {
-  const percentage = calcMemoryUsage(bakiyeler, loglar);
-  const pct = parseFloat(percentage);
+  const { pct, kb } = calcMemoryUsage(bakiyeler, loglar);
   const colorClass = pct > 80 ? 'text-danger' : pct > 50 ? 'text-warning' : 'text-success';
   const barClass = pct > 80 ? 'bg-danger' : pct > 50 ? 'bg-warning' : 'bg-success';
 
@@ -24,10 +23,10 @@ export default function Footer({ bakiyeler, loglar, verileriSifirla }) {
           <div className="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
             <div
               className={`h-full ${barClass} transition-all duration-500`}
-              style={{ width: `${Math.min(pct * 1000, 100)}%` }}
+              style={{ width: `${Math.min(pct, 100)}%` }}
             ></div>
           </div>
-          <span className={`font-bold ${colorClass} w-12 text-right`}>%{percentage}</span>
+          <span className={`font-bold ${colorClass} w-16 text-right`}>{kb} KB</span>
         </div>
       </div>
     </footer>

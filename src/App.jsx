@@ -265,7 +265,7 @@ export default function App() {
     <div className="bg-gray-100 text-gray-800 dark:bg-darkBg dark:text-gray-100 h-screen flex flex-col overflow-hidden transition-colors duration-300">
       <Header isDark={isDark} toggleTheme={toggleTheme} />
 
-      <main className="flex-grow container mx-auto p-4 flex flex-col gap-5 overflow-hidden">
+      <main className="flex-grow container mx-auto p-4 flex flex-col gap-5 overflow-y-auto md:overflow-hidden">
         {/* Aksiyon Butonları */}
         <div className="flex flex-row gap-3 shrink-0">
           <button
@@ -289,7 +289,7 @@ export default function App() {
         </div>
 
         {/* Ana Paneller */}
-        <div className="flex flex-col md:flex-row gap-6 h-full overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-6 md:flex-grow md:overflow-hidden">
           <TransactionForm
             tarih={tarih} setTarih={setTarih}
             isAktarma={isAktarma} setIsAktarma={setIsAktarma}
@@ -302,7 +302,7 @@ export default function App() {
             btnSaved={btnSaved}
           />
 
-          <div className="w-full md:w-2/3 flex flex-col gap-4 h-full overflow-hidden">
+          <div className="w-full md:w-2/3 flex flex-col gap-4 md:h-full md:overflow-hidden">
             {/* AI Analiz */}
             <div className="glass-panel rounded-xl shadow p-4 border-l-4 border-l-info flex items-start gap-3 shrink-0">
               <div className="text-info text-2xl pt-1"><i className="fa-solid fa-bolt"></i></div>

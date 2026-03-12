@@ -4,7 +4,7 @@ export default function TransactionLog({ loglar, islemSil, islemDuzenle }) {
   const son20 = [...loglar].slice(-20).reverse();
 
   return (
-    <div className="glass-panel rounded-xl shadow p-4 h-64 flex flex-col overflow-hidden border-t-4 border-t-gray-400 dark:border-t-slate-600">
+    <div className="glass-panel rounded-xl shadow p-4 min-h-72 md:h-80 flex flex-col overflow-hidden border-t-4 border-t-gray-400 dark:border-t-slate-600">
       <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase mb-3 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
         <i className="fa-solid fa-list-ul"></i> İşlem Geçmişi (Son 20)
       </h3>
